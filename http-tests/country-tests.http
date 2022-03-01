@@ -1,0 +1,80 @@
+GET http://localhost:8080/api/v1/country
+Accept: application/json
+
+> {%
+client.test("Query for empty countries", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body.length === 0, "Country list should be empty");
+});
+%}
+
+###
+
+GET http://localhost:8080/api/v1/country/999999
+Accept: application/json
+
+> {%
+client.test("Query for non-existing country", function() {
+  client.assert(response.status === 404, "Response status is not 404");
+});
+%}
+
+###
+
+POST http://localhost:8080/api/v1/country
+Content-Type: application/json
+
+{
+  "name": "Czech Republic"
+}
+
+> {%
+client.test("Create country 1", function() {
+  client.assert(response.status === 201, "Response status is not 201");
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var countryId = locationHeader.substring(idx + 1);
+  client.global.set("countryId1", countryId);
+});
+%}
+
+###
+
+GET http://localhost:8080/api/v1/country/{{countryId1}}
+Accept: application/json
+
+> {%
+client.test("Country 1 created", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body.id === parseInt(client.global.get("countryId1")), "Invalid countryId");
+  client.assert(response.body.name === "Czech Republic", "Invalid country name");
+});
+%}
+
+###
+
+PUT http://localhost:8080/api/v1/country/{{countryId1}}
+Content-Type: application/json
+
+{
+  "name": "The Czech Republic"
+}
+
+> {%
+client.test("Update Country 1", function() {
+  client.assert(response.status === 204, "Response status is not 204");
+});
+%}
+
+###
+
+GET http://localhost:8080/api/v1/country/{{countryId1}}
+Accept: application/json
+
+> {%
+client.test("Country 1 updated", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body.id === parseInt(client.global.get("countryId1")), "Invalid countryId");
+  client.assert(response.body.name === "The Czech Republic", "Invalid country name");
+});
+%}

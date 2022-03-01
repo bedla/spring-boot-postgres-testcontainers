@@ -1,0 +1,144 @@
+POST http://localhost:8080/api/v1/country
+Content-Type: application/json
+
+{
+  "name": "AAA"
+}
+
+> {%
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var countryId = locationHeader.substring(idx + 1);
+  client.global.set("aaaCountryId", countryId);
+%}
+
+###
+
+POST http://localhost:8080/api/v1/country
+Content-Type: application/json
+
+{
+  "name": "BBB"
+}
+
+> {%
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var countryId = locationHeader.substring(idx + 1);
+  client.global.set("bbbCountryId", countryId);
+%}
+
+###
+
+POST http://localhost:8080/api/v1/country
+Content-Type: application/json
+
+{
+  "name": "CCC"
+}
+
+> {%
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var countryId = locationHeader.substring(idx + 1);
+  client.global.set("cccCountryId", countryId);
+%}
+
+###
+
+POST http://localhost:8080/api/v1/person
+Content-Type: application/json
+
+{
+  "firstName": "Ivo",
+  "lastName": "Smid",
+  "countryId": {{aaaCountryId}}
+}
+
+> {%
+client.test("Create person 1", function() {
+  client.assert(response.status === 201, "Response status is not 201");
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var personId = locationHeader.substring(idx + 1);
+  client.global.set("personId1", personId);
+});
+%}
+
+###
+
+POST http://localhost:8080/api/v1/person
+Content-Type: application/json
+
+{
+  "firstName": "Dave",
+  "lastName": "Lister",
+  "countryId": {{aaaCountryId}}
+}
+
+> {%
+client.test("Create person 2", function() {
+  client.assert(response.status === 201, "Response status is not 201");
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var personId = locationHeader.substring(idx + 1);
+  client.global.set("personId2", personId);
+});
+%}
+
+###
+
+POST http://localhost:8080/api/v1/person
+Content-Type: application/json
+
+{
+  "firstName": "Arnold",
+  "lastName": "Rimmer",
+  "countryId": {{bbbCountryId}}
+}
+
+> {%
+client.test("Create person 3", function() {
+  client.assert(response.status === 201, "Response status is not 201");
+  var locationHeader = response.headers.valueOf("Location");
+  var idx = locationHeader.lastIndexOf("/");
+  var personId = locationHeader.substring(idx + 1);
+  client.global.set("personId3", personId);
+});
+%}
+
+###
+
+POST http://localhost:8080/api/v1/statistics/top-countries
+Content-Type: application/json
+
+{
+  "top": 999999
+}
+
+> {%
+client.test("Statistics", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+
+  var aaaCountryId = parseInt(client.global.get("aaaCountryId"));
+  var bbbCountryId = parseInt(client.global.get("bbbCountryId"));
+  var cccCountryId = parseInt(client.global.get("cccCountryId"));
+
+  var items = response.body.top.filter((element) => {
+      client.log(element.country.name+" "+element.country.id);
+      return element.country.id === aaaCountryId ||
+             element.country.id === bbbCountryId ||
+             element.country.id === cccCountryId;
+  } )
+
+  client.assert(items.length === 3, "Invalid statistics size: " + items.length);
+  client.assert(items[0].country.id === aaaCountryId, "Invalid countryId: " + items[0].country.id);
+  client.assert(items[0].personCount === 2, "Invalid personCount: " + items[0].personCount);
+  client.assert(items[1].country.id === bbbCountryId, "Invalid countryId: " + items[1].country.id);
+  client.assert(items[1].personCount === 1, "Invalid personCount: " + items[1].personCount);
+  client.assert(items[2].country.id === cccCountryId, "Invalid countryId: " + items[2].country.id);
+  client.assert(items[2].personCount === 0, "Invalid personCount: " + items[2].personCount);
+});
+%}
+
+###

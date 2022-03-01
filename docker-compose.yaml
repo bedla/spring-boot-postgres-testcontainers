@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  pgsql-db:
+    image: "postgres:14-alpine"
+    environment:
+      POSTGRES_PASSWORD: "Password1234"
+      POSTGRES_DB: "my-database"
+    ports:
+      - "5432:5432"
+    networks:
+      - my-network
+  liquibase:
+    image: liquibase/liquibase
+    # cannot use absolute path (like /liquibase/changelog/changelog.xml), it has to be relative to /liquibase/.
+    command: --url=jdbc:postgresql://pgsql-db:5432/my-database --changeLogFile=./changelog/changelog.xml --username=postgres --password=Password1234 update
+    volumes:
+      - ./sql:/liquibase/changelog
+    networks:
+      - my-network
+    depends_on:
+      - pgsql-db
+
+networks:
+  my-network:
