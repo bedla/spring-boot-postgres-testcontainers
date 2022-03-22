@@ -2,13 +2,13 @@ package cz.bedla.samples.testcontainers;
 
 import io.restassured.http.ContentType;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static org.apache.commons.lang3.math.NumberUtils.toInt;
 import static org.hamcrest.Matchers.startsWith;
 
 public final class ApiUtils {
@@ -27,7 +27,7 @@ public final class ApiUtils {
                 .header(HttpHeaders.LOCATION, startsWith("/api/v1/country/"))
                 .extract()
                 .header(HttpHeaders.LOCATION);
-        return NumberUtils.toInt(StringUtils.substringAfterLast(location, "/"));
+        return toInt(StringUtils.substringAfterLast(location, "/"));
     }
 
     public static int apiCreatePerson(String firstName, String lastName, int countryId) {
@@ -44,7 +44,7 @@ public final class ApiUtils {
                 .header(HttpHeaders.LOCATION, startsWith("/api/v1/person/"))
                 .extract()
                 .header(HttpHeaders.LOCATION);
-        return NumberUtils.toInt(StringUtils.substringAfterLast(location, "/"));
+        return toInt(StringUtils.substringAfterLast(location, "/"));
     }
 
 }

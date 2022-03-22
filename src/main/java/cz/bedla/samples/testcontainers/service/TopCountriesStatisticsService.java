@@ -1,11 +1,13 @@
 package cz.bedla.samples.testcontainers.service;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import cz.bedla.samples.testcontainers.entity.Country;
 import cz.bedla.samples.testcontainers.entity.CountryPersonStatistics;
 import cz.bedla.samples.testcontainers.entity.Tables;
 import cz.bedla.samples.testcontainers.repository.CountryRepository;
 import cz.bedla.samples.testcontainers.repository.StatisticsRepository;
 import org.jooq.Record2;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +31,8 @@ public class TopCountriesStatisticsService {
         this.countryRepository = notNull(countryRepository, "countryRepository cannot be null");
     }
 
-    public List<CountryPersonStatistics> calculate(int top) {
+    @Cacheable("statistics")
+    public Result calculate(int top) {
         var list = statisticsRepository.calculateTopCountriesWithMostPersons(top);
         if (list.isNotEmpty()) {
             var countryIds = list.stream()
@@ -41,7 +44,7 @@ public class TopCountriesStatisticsService {
             validState(countries.size() == countryIds.size(),
                     "Unable to find all countries by ids: %s", countryIds);
             var countryIndex = countries.intoMap(Tables.COUNTRY.ID);
-            return list.stream()
+            return new Result(list.stream()
                     .map(it -> {
                         var countryId = it.value1();
                         var personCount = it.value2();
@@ -50,9 +53,14 @@ public class TopCountriesStatisticsService {
                                 "Unable to find country.id=%d in %d", countryId, countryIndex);
                         return new CountryPersonStatistics(Country.from(countryRecord), personCount);
                     })
-                    .toList();
+                    .toList());
         } else {
-            return List.of();
+            return new Result(List.of());
         }
+    }
+
+    // https://github.com/FasterXML/jackson-databind/issues/1349
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY)
+    public record Result(List<CountryPersonStatistics> items) {
     }
 }

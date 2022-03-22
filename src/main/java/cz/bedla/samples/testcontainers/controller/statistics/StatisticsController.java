@@ -25,8 +25,8 @@ public class StatisticsController {
     public TopCountriesStatisticsResponse calculateTopCountries(
             @RequestBody @Validated TopCountriesStatisticsRequest request
     ) {
-        var list = topCountriesStatisticsService.calculate(request.top());
-        return new TopCountriesStatisticsResponse(list.stream()
+        var result = topCountriesStatisticsService.calculate(request.top());
+        return new TopCountriesStatisticsResponse(result.items().stream()
                 .map(it -> new TopCountriesStatisticsResponse.CountryPersons(
                         CountryDto.from(it.country()),
                         it.personsCount()))

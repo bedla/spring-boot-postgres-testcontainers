@@ -19,6 +19,14 @@ services:
       - my-network
     depends_on:
       - pgsql-db
+  redis:
+    image: bitnami/redis:6.2
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6379:6379"
+    networks:
+      - my-network
 
 networks:
   my-network:

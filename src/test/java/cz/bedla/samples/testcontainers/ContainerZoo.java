@@ -1,0 +1,113 @@
+package cz.bedla.samples.testcontainers;
+
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.utility.DockerImageName;
+
+import java.io.IOException;
+import java.time.Duration;
+
+public class ContainerZoo {
+    private static final Logger log = LoggerFactory.getLogger(ContainerZoo.class);
+
+    private final Network network = Network.newNetwork();
+    private final PostgreSQLContainer<?> postgresqlContainer;
+    private final GenericContainer<?> liquibaseContainer;
+    private final GenericContainer<?> redisContainer;
+
+    public static ContainerZoo create() {
+        return new ContainerZoo(false);
+    }
+
+    public static ContainerZoo createWithRedis() {
+        return new ContainerZoo(true);
+    }
+
+    private ContainerZoo(boolean createRedis) {
+        var pgsqlAlias = "pgsql-db";
+
+        this.postgresqlContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:14-alpine"))
+                .withNetwork(network)
+                .withNetworkAliases(pgsqlAlias)
+                .withDatabaseName("integration-tests");
+
+        this.liquibaseContainer = new GenericContainer<>(DockerImageName.parse("liquibase/liquibase"))
+                .withCommand(
+                        "--url=jdbc:postgresql://" + pgsqlAlias + ":5432/" + postgresqlContainer.getDatabaseName(),
+                        "--changeLogFile=./changelog/changelog.xml",
+                        "--username=" + postgresqlContainer.getUsername(),
+                        "--password=" + postgresqlContainer.getPassword(),
+                        "update")
+                .withFileSystemBind("./sql", "/liquibase/changelog")
+                .waitingFor(new LogMessageWaitStrategy()
+                        .withRegEx("Liquibase command '.+' was executed successfully\\.\\n")
+                        .withStartupTimeout(Duration.ofSeconds(30)))
+                .withNetwork(network)
+                .dependsOn(postgresqlContainer);
+
+        this.redisContainer = createRedis
+                ? new GenericContainer<>(DockerImageName.parse("bitnami/redis:6.2"))
+                .withNetworkAliases("redis")
+                .withExposedPorts(6379)
+                .withNetwork(network)
+                .withEnv("ALLOW_EMPTY_PASSWORD", "yes")
+                : null;
+    }
+
+    public void start() {
+        log.info("> Start pgsql");
+        postgresqlContainer.start();
+        log.info("> Start liquibase");
+        liquibaseContainer.start();
+        if (redisContainer != null) {
+            log.info("> Start redis");
+            redisContainer.start();
+        } else {
+            log.info("> Redis start skip requested");
+        }
+    }
+
+    public void setupDynamicProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresqlContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresqlContainer::getUsername);
+        registry.add("spring.datasource.password", postgresqlContainer::getPassword);
+        if (redisContainer != null) {
+            registry.add("spring.redis.port", redisContainer::getFirstMappedPort);
+        }
+    }
+
+    public void truncateCache() {
+        log.info("> Truncate Redis cache");
+        try {
+            var execResult = redisContainer.execInContainer(
+                    "redis-cli", "flushall");
+            if (execResult.getExitCode() != 0) {
+                throw new IllegalStateException("Unable to run redis-cli\n\n" + execResult);
+            }
+        } catch (IOException | InterruptedException e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    public void truncateDb() {
+        log.info("> Truncate pgsql DB");
+        try {
+            var execResult = postgresqlContainer.execInContainer(
+                    "psql",
+                    "-U", postgresqlContainer.getUsername(),
+                    "-d", postgresqlContainer.getDatabaseName(),
+                    "-c", "TRUNCATE TABLE foo.PERSON, foo.COUNTRY;");
+            if (execResult.getExitCode() != 0) {
+                throw new IllegalStateException("Unable to run psql\n\n" + execResult);
+            }
+        } catch (IOException | InterruptedException e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+}
