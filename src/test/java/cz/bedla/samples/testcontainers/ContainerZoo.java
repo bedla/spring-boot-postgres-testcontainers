@@ -84,27 +84,23 @@ public class ContainerZoo {
 
     public void truncateCache() {
         log.info("> Truncate Redis cache");
-        try {
-            var execResult = redisContainer.execInContainer(
-                    "redis-cli", "flushall");
-            if (execResult.getExitCode() != 0) {
-                throw new IllegalStateException("Unable to run redis-cli\n\n" + execResult);
-            }
-        } catch (IOException | InterruptedException e) {
-            ExceptionUtils.rethrow(e);
-        }
+        runInContainer(redisContainer, "redis-cli", "flushall");
     }
 
     public void truncateDb() {
         log.info("> Truncate pgsql DB");
+        runInContainer(postgresqlContainer,
+                "psql",
+                "-U", postgresqlContainer.getUsername(),
+                "-d", postgresqlContainer.getDatabaseName(),
+                "-c", "TRUNCATE TABLE foo.PERSON, foo.COUNTRY;");
+    }
+
+    private static void runInContainer(GenericContainer<?> container, String... command) {
         try {
-            var execResult = postgresqlContainer.execInContainer(
-                    "psql",
-                    "-U", postgresqlContainer.getUsername(),
-                    "-d", postgresqlContainer.getDatabaseName(),
-                    "-c", "TRUNCATE TABLE foo.PERSON, foo.COUNTRY;");
+            var execResult = container.execInContainer(command);
             if (execResult.getExitCode() != 0) {
-                throw new IllegalStateException("Unable to run psql\n\n" + execResult);
+                throw new IllegalStateException("Unable to run " + command[0] + "\n\n" + execResult);
             }
         } catch (IOException | InterruptedException e) {
             ExceptionUtils.rethrow(e);

@@ -73,14 +73,6 @@ class CacheStatisticsControllerTests {
 
         apiCreatePerson("Friedrich", "Nietzsche", deId);
 
-        var result = get("/country")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract()
-                .body().as(new TypeRef<List<Map<String, Object>>>() {
-                });
-        System.out.println(result);
-
         requestTopCountriesStatistics(
                 czId, "CZ", 2,
                 deId, "DE", 1);

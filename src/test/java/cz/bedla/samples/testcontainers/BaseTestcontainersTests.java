@@ -20,7 +20,7 @@ public abstract class BaseTestcontainersTests {
     private static final ContainerZoo containerZoo = ContainerZoo.create();
 
     @DynamicPropertySource
-    static void setupDynamiProperties(DynamicPropertyRegistry registry) {
+    static void setupDynamicProperties(DynamicPropertyRegistry registry) {
         containerZoo.setupDynamicProperties(registry);
     }
 
