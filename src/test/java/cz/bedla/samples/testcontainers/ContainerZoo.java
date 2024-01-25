@@ -78,6 +78,7 @@ public class ContainerZoo {
         registry.add("spring.datasource.username", postgresqlContainer::getUsername);
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
         if (redisContainer != null) {
+            registry.add("spring.redis.host", redisContainer::getHost);
             registry.add("spring.redis.port", redisContainer::getFirstMappedPort);
         }
     }

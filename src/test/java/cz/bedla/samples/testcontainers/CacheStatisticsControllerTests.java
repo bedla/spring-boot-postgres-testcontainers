@@ -30,7 +30,6 @@ import static org.hamcrest.Matchers.hasSize;
 @TestPropertySource(
         properties = {
                 "spring.cache.type=redis",
-                "spring.redis.host=localhost",
                 "spring.cache.redis.time-to-live=2s"
         }
 )
