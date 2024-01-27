@@ -1,7 +1,7 @@
 package cz.bedla.samples.testcontainers.controller.statistics.dto;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 public record TopCountriesStatisticsRequest(
         @Min(1)

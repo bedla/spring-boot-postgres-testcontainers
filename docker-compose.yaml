@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   pgsql-db:
-    image: "postgres:14-alpine"
+    image: "postgres:alpine"
     environment:
       POSTGRES_PASSWORD: "Password1234"
       POSTGRES_DB: "my-database"

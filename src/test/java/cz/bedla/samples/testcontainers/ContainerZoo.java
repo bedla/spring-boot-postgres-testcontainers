@@ -1,5 +1,6 @@
 package cz.bedla.samples.testcontainers;
 
+import com.redis.testcontainers.RedisContainer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ public class ContainerZoo {
     private final Network network = Network.newNetwork();
     private final PostgreSQLContainer<?> postgresqlContainer;
     private final GenericContainer<?> liquibaseContainer;
-    private final GenericContainer<?> redisContainer;
+    private final RedisContainer redisContainer;
 
     public static ContainerZoo create() {
         return new ContainerZoo(false);
@@ -32,7 +33,7 @@ public class ContainerZoo {
     private ContainerZoo(boolean createRedis) {
         var pgsqlAlias = "pgsql-db";
 
-        this.postgresqlContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:14-alpine"))
+        this.postgresqlContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:alpine"))
                 .withNetwork(network)
                 .withNetworkAliases(pgsqlAlias)
                 .withDatabaseName("integration-tests");
@@ -52,9 +53,8 @@ public class ContainerZoo {
                 .dependsOn(postgresqlContainer);
 
         this.redisContainer = createRedis
-                ? new GenericContainer<>(DockerImageName.parse("bitnami/redis:6.2"))
+                ? new RedisContainer(RedisContainer.DEFAULT_IMAGE_NAME.withTag(RedisContainer.DEFAULT_TAG))
                 .withNetworkAliases("redis")
-                .withExposedPorts(6379)
                 .withNetwork(network)
                 .withEnv("ALLOW_EMPTY_PASSWORD", "yes")
                 : null;
@@ -78,8 +78,7 @@ public class ContainerZoo {
         registry.add("spring.datasource.username", postgresqlContainer::getUsername);
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
         if (redisContainer != null) {
-            registry.add("spring.redis.host", redisContainer::getHost);
-            registry.add("spring.redis.port", redisContainer::getFirstMappedPort);
+            registry.add("spring.data.redis.url", redisContainer::getRedisURI);
         }
     }
 

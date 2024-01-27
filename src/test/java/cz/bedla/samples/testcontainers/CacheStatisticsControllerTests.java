@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.hasSize;
 @TestPropertySource(
         properties = {
                 "spring.cache.type=redis",
-                "spring.cache.redis.time-to-live=2s"
+                "spring.cache.redis.time-to-live=5s"
         }
 )
 class CacheStatisticsControllerTests {
@@ -84,8 +84,8 @@ class CacheStatisticsControllerTests {
 
         // wait 2.5s for Redis cache TTL expiration
         await()
-                .atMost(Duration.ofSeconds(5))
-                .until(() -> Duration.ofMillis(System.currentTimeMillis() - start).toMillis() > Duration.ofSeconds(2).plusMillis(500).toMillis());
+                .atMost(Duration.ofSeconds(10))
+                .until(() -> Duration.ofMillis(System.currentTimeMillis() - start).toMillis() > Duration.ofSeconds(5).plusMillis(500).toMillis());
 
         requestTopCountriesStatistics(
                 usId, "US", 3,
