@@ -4,6 +4,7 @@ import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class CacheStatisticsControllerTests {
     private static final ContainerZoo containerZoo = ContainerZoo.createWithRedis();
 
     @DynamicPropertySource
-    static void setupDynamiProperties(DynamicPropertyRegistry registry) {
+    static void setupDynamicProperties(DynamicPropertyRegistry registry) {
         containerZoo.setupDynamicProperties(registry);
     }
 
@@ -52,13 +53,15 @@ class CacheStatisticsControllerTests {
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws InterruptedException {
         RestAssured.port = localServerPort;
         RestAssured.basePath = "/api/v1";
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails(LogDetail.ALL);
 
         containerZoo.truncateDb();
         containerZoo.truncateCache();
+
+        Thread.sleep(Duration.ofSeconds(3));
     }
 
     @Test

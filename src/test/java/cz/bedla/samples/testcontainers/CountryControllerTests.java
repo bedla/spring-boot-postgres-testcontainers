@@ -14,9 +14,7 @@ import java.util.stream.Stream;
 import static cz.bedla.samples.testcontainers.ApiUtils.apiCreateCountry;
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 
 class CountryControllerTests extends BaseTestcontainersTests {
     @Test

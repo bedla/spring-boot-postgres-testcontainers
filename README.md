@@ -6,7 +6,7 @@ using Testcontainers.
 
 Technologies used:
 
-- Java 17
+- Java 25
 - [IntelliJ IDEA](https://www.jetbrains.com/idea/)
     - Best IDE
 - [Spring Boot](https://spring.io/projects/spring-boot)
@@ -38,7 +38,7 @@ You can check source code for functionality which is super simple.
 
 # Technical description
 
-Application is written in Java 17 (usage of Records, var keyword), build by Maven and wired using Spring Boot.
+Application is written in Java 25 (usage of Records, var keyword), build by Maven and wired using Spring Boot.
 Application is usual REST endpoint application that uses DB as it's persistent store.
 
 ## Database & migration
